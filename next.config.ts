@@ -30,6 +30,10 @@ const securityHeaders = [
 const nextConfig: NextConfig = {
   cacheComponents: false,
   poweredByHeader: false,
+  serverExternalPackages: ["argon2"],
+  outputFileTracingIncludes: {
+    "/**": ["./data/**/*", "./prisma/**/*"],
+  },
   turbopack: {
     rules: {
       "*.css": {

@@ -1,0 +1,4 @@
+{
+  "framework": "nextjs",
+  "buildCommand": "npx prisma generate && DATABASE_URL='file:../data/tusovka.db' npx prisma migrate deploy && next build"
+}

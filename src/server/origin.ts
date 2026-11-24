@@ -64,5 +64,10 @@ export function assertSameOrigin(input: {
 }
 
 export function appOrigin(): string {
-  return process.env.APP_ORIGIN?.replace(/\/$/, "") || "http://localhost:3000";
+  if (process.env.APP_ORIGIN) return process.env.APP_ORIGIN.replace(/\/$/, "");
+  if (process.env.VERCEL_PROJECT_PRODUCTION_URL) {
+    return `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL.replace(/^https?:\/\//, "")}`;
+  }
+  if (process.env.VERCEL_URL) return `https://${process.env.VERCEL_URL.replace(/^https?:\/\//, "")}`;
+  return "http://localhost:3000";
 }

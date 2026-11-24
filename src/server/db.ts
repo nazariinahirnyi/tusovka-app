@@ -1,3 +1,4 @@
+import { copyFileSync, existsSync, mkdirSync } from "node:fs";
 import path from "node:path";
 import { PrismaClient } from "@prisma/client";
 import { MemoryRateLimiter } from "@/server/rate-limit";
@@ -31,7 +32,25 @@ export function getLimiter(): MemoryRateLimiter {
 }
 
 export function uploadsDir(): string {
+  if (process.env.VERCEL) return "/tmp/tusovka-uploads";
   return path.resolve(process.cwd(), "data", "uploads");
+}
+
+function sqliteFilePath(url: string): string | null {
+  if (!url.startsWith("file:")) return null;
+  const raw = url.slice("file:".length);
+  return path.isAbsolute(raw) ? raw : path.resolve(process.cwd(), "prisma", raw);
+}
+
+function ensureWritableDatabase(): void {
+  const dest = sqliteFilePath(process.env.DATABASE_URL ?? "");
+  if (!dest) return;
+  mkdirSync(path.dirname(dest), { recursive: true });
+  if (existsSync(dest)) return;
+  const template = path.resolve(process.cwd(), "data", "tusovka.db");
+  if (existsSync(template) && path.resolve(template) !== path.resolve(dest)) {
+    copyFileSync(template, dest);
+  }
 }
 
 export type AppServices = {
@@ -42,6 +61,8 @@ export type AppServices = {
 };
 
 export async function getServices(): Promise<AppServices> {
+  ensureWritableDatabase();
+  mkdirSync(uploadsDir(), { recursive: true });
   const prisma = getPrisma();
   if (!globalForPrisma.sqliteReady) {
     globalForPrisma.sqliteReady = configureSqlite(prisma);

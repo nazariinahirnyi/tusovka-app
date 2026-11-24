@@ -5,7 +5,7 @@ const root = path.resolve(__dirname, "..");
 const envPath = path.join(root, ".env");
 const examplePath = path.join(root, ".env.example");
 
-if (!fs.existsSync(envPath) && fs.existsSync(examplePath)) {
+if (!process.env.VERCEL && !fs.existsSync(envPath) && fs.existsSync(examplePath)) {
   fs.copyFileSync(examplePath, envPath);
 }
 
