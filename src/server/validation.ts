@@ -112,6 +112,11 @@ export function normalizeTitle(title: string): string {
   return title.toLocaleLowerCase("uk-UA").replace(/\s+/g, " ").trim();
 }
 
+/** LIKE wildcards are stripped so a search for "%" cannot match every title. */
+export function searchNeedle(query: string): string {
+  return normalizeTitle(query).replace(/[%_\\]/g, "");
+}
+
 export function parseOrThrow<T>(schema: z.ZodType<T>, data: unknown): T {
   const result = schema.safeParse(data);
   if (result.success) return result.data;

@@ -9,6 +9,7 @@ import {
   eventStartsAtUtc,
   normalizeTitle,
   parseOrThrow,
+  searchNeedle,
   searchQuerySchema,
 } from "@/server/validation";
 
@@ -33,8 +34,8 @@ export async function listPublicUpcoming(
     where: {
       isPublic: true,
       startsAt: { gt: now },
-      ...(q
-        ? { titleNormalized: { contains: normalizeTitle(q) } }
+      ...(q && searchNeedle(q)
+        ? { titleNormalized: { contains: searchNeedle(q) } }
         : {}),
     },
     orderBy: { startsAt: "asc" },
@@ -179,17 +180,32 @@ export async function updateEvent(
   }
 
   try {
-    const updated = await services.prisma.event.update({
-      where: { id: eventId },
-      data: {
-        title: data.title,
-        titleNormalized: normalizeTitle(data.title),
-        description: data.description,
-        startsAt,
-        capacity: data.capacity,
-        coverFilename,
-        isPublic: data.isPublic,
-      },
+    const updated = await services.prisma.$transaction(async (tx) => {
+      const guarded = await tx.$executeRaw`
+        UPDATE Event
+        SET capacity = ${data.capacity}
+        WHERE id = ${eventId}
+          AND (
+            SELECT COUNT(*) FROM Rsvp WHERE eventId = ${eventId}
+          ) <= ${data.capacity}
+      `;
+      if (guarded === 0) {
+        throw new AppError(400, "capacity_too_low", "Місткість менша за кількість уже записаних", {
+          capacity: "Уже записано більше людей",
+        });
+      }
+      return tx.event.update({
+        where: { id: eventId },
+        data: {
+          title: data.title,
+          titleNormalized: normalizeTitle(data.title),
+          description: data.description,
+          startsAt,
+          capacity: data.capacity,
+          coverFilename,
+          isPublic: data.isPublic,
+        },
+      });
     });
     if (uploaded && existing.coverFilename && existing.coverFilename !== uploaded) {
       await deleteCover(services.uploadsDir, existing.coverFilename);

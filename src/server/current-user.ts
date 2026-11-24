@@ -19,11 +19,23 @@ export async function requireCurrentUser(): Promise<PublicUser> {
   return requireUser(services, await readSessionToken());
 }
 
+function plausibleIp(value: string): boolean {
+  return value.length > 0 && value.length <= 64 && /^[0-9a-fA-F:.]+$/.test(value);
+}
+
 export async function clientIp(): Promise<string> {
   const h = await headers();
+  // The leftmost X-Forwarded-For hop is chosen by the client and bypasses IP limits.
+  // A proxy appends the observed address, so the rightmost hop is the one we keep.
   const forwarded = h.get("x-forwarded-for");
-  if (forwarded) return forwarded.split(",")[0]?.trim() || "0.0.0.0";
-  return h.get("x-real-ip") || "0.0.0.0";
+  if (forwarded) {
+    const hops = forwarded.split(",").map((part) => part.trim()).filter(plausibleIp);
+    const last = hops.at(-1);
+    if (last) return last;
+  }
+  const real = h.get("x-real-ip")?.trim() ?? "";
+  if (plausibleIp(real)) return real;
+  return "0.0.0.0";
 }
 
 export async function assertMutationOrigin(): Promise<void> {

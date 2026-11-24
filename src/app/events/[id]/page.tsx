@@ -38,7 +38,7 @@ export default async function EventPage({ params }: { params: Promise<{ id: stri
   const user = await currentUser();
   const event = await loadEvent(id, user?.id ?? null);
   const [comments, joined, attendees] = await Promise.all([
-    listComments(services, event.id),
+    listComments(services, event.id, user?.id ?? null),
     user ? hasJoined(services, event.id, user.id) : Promise.resolve(false),
     user?.id === event.authorId ? listAttendees(services, event.id, user.id) : Promise.resolve(null),
   ]);

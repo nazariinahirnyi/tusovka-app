@@ -15,7 +15,8 @@ function parseHost(value: string | null | undefined): string | null {
 export function assertSafeReturnPath(path: string | null | undefined): string {
   if (!path) return "/";
   if (!path.startsWith("/") || path.startsWith("//") || path.includes("\\")) return "/";
-  if (path.includes("://")) return "/";
+  if (path.includes("://") || path.includes("%") || path.includes("@")) return "/";
+  if (/[\u0000-\u001f\u007f]/.test(path)) return "/";
   return path;
 }
 

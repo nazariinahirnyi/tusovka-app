@@ -18,9 +18,9 @@ export function getPrisma(): PrismaClient {
 }
 
 export async function configureSqlite(prisma: PrismaClient): Promise<void> {
-  await prisma.$queryRawUnsafe("PRAGMA foreign_keys = ON");
-  await prisma.$queryRawUnsafe("PRAGMA busy_timeout = 5000");
-  await prisma.$queryRawUnsafe("PRAGMA journal_mode = WAL");
+  await prisma.$queryRaw`PRAGMA foreign_keys = ON`;
+  await prisma.$queryRaw`PRAGMA busy_timeout = 5000`;
+  await prisma.$queryRaw`PRAGMA journal_mode = WAL`;
 }
 
 export function getLimiter(): MemoryRateLimiter {

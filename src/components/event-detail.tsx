@@ -56,7 +56,9 @@ export function EventDetail({
         {event.coverFilename ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img
-            src={`/api/covers/${event.coverFilename}`}
+            src={`/api/covers/${event.coverFilename}${
+              !event.isPublic && inviteToken ? `?invite=${encodeURIComponent(inviteToken)}` : ""
+            }`}
             alt=""
             className="max-h-[420px] w-full object-cover"
           />

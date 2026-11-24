@@ -25,7 +25,7 @@ export default async function InvitePage({ params }: { params: Promise<{ token: 
     throw error;
   }
   const [comments, joined, attendees] = await Promise.all([
-    listComments(services, event.id),
+    listComments(services, event.id, user?.id ?? null, token),
     user ? hasJoined(services, event.id, user.id) : Promise.resolve(false),
     user?.id === event.authorId ? listAttendees(services, event.id, user.id) : Promise.resolve(null),
   ]);

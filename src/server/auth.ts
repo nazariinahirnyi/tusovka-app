@@ -62,11 +62,12 @@ export async function loginUser(
   ip: string,
 ): Promise<{ user: PublicUser; sessionToken: string }> {
   const data = parseOrThrow(loginSchema, input);
+  // Per-account key does not include IP: a spoofed X-Forwarded-For must not reset it.
+  const emailKey = `login-email:${data.email}`;
   const ipKey = `login-ip:${ip}`;
-  const emailKey = `login:${ip}:${data.email}`;
   if (
-    !services.limiter.consume(ipKey, LOGIN_IP_LIMIT, LOGIN_WINDOW_MS) ||
-    !services.limiter.consume(emailKey, LOGIN_LIMIT, LOGIN_WINDOW_MS)
+    !services.limiter.consume(emailKey, LOGIN_LIMIT, LOGIN_WINDOW_MS) ||
+    !services.limiter.consume(ipKey, LOGIN_IP_LIMIT, LOGIN_WINDOW_MS)
   ) {
     await dummyVerify(data.password);
     throw new AppError(429, "rate_limited", "Забагато спроб. Спробуйте пізніше.");
