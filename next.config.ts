@@ -32,7 +32,14 @@ const nextConfig: NextConfig = {
   poweredByHeader: false,
   serverExternalPackages: ["argon2"],
   outputFileTracingIncludes: {
-    "/**": ["./data/**/*", "./prisma/**/*"],
+    "/**": [
+      "./prisma/**/*",
+      "./node_modules/.prisma/client/**/*",
+      "./node_modules/@prisma/client/**/*",
+    ],
+  },
+  outputFileTracingExcludes: {
+    "/**": ["./.env", "./.env.*", "./data/**/*", "./.git/**/*"],
   },
   turbopack: {
     rules: {

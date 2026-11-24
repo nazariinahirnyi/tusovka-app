@@ -49,6 +49,10 @@ npm run db:seed
 npm test
 ```
 
+## Live
+
+https://zippy-pavo-tzhcwyf.tmp.now
+
 ## Продакшен
 
 ```bash
