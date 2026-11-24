@@ -13,7 +13,10 @@ export function SearchForm({ defaultValue }: { defaultValue: string }) {
         placeholder="Пошук за назвою…"
         className="w-full rounded-full border border-line bg-cream px-5 py-3"
       />
-      <button type="submit" className="rounded-full bg-ink px-5 py-3 font-medium text-cream hover:bg-ember">
+      <button
+        type="submit"
+        className="shrink-0 rounded-full bg-ink px-5 py-3 font-medium text-cream hover:bg-ember"
+      >
         Знайти
       </button>
     </form>

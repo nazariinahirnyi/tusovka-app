@@ -16,6 +16,7 @@ export default async function ProfilePage() {
   const user = await currentUser();
   if (!user) redirect("/login?next=/profile");
   const services = await getServices();
+  const nowMs = services.now().getTime();
   const [created, joined] = await Promise.all([
     listCreatedEvents(services, user.id),
     listJoinedEvents(services, user.id),
@@ -44,7 +45,7 @@ export default async function ProfilePage() {
         ) : (
           <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
             {created.map((event) => (
-              <EventCard key={event.id} event={event} viewerId={user.id} />
+              <EventCard key={event.id} event={event} nowMs={nowMs} />
             ))}
           </div>
         )}
@@ -57,7 +58,7 @@ export default async function ProfilePage() {
         ) : (
           <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
             {joined.map((event) => (
-              <EventCard key={event.id} event={event} viewerId={user.id} />
+              <EventCard key={event.id} event={event} nowMs={nowMs} />
             ))}
           </div>
         )}

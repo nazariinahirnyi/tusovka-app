@@ -45,8 +45,19 @@ describe("events, privacy, rsvp", () => {
       });
       const viaInvite = await getEventForViewer(world.services, priv.id, borys.id, priv.inviteToken);
       expect(viaInvite.id).toBe(priv.id);
+      expect(viaInvite.inviteToken).toBeUndefined();
       const asAuthor = await getEventForViewer(world.services, priv.id, anna.id);
       expect(asAuthor.id).toBe(priv.id);
+      expect(asAuthor.inviteToken).toBe(priv.inviteToken);
+      expect("inviteToken" in home[0]!).toBe(false);
+
+      await expect(joinEvent(world.services, priv.id, borys.id)).rejects.toMatchObject({
+        status: 404,
+      });
+      await addComment(world.services, priv.id, borys.id, { body: "таємно" }, priv.inviteToken);
+      await expect(
+        addComment(world.services, priv.id, borys.id, { body: "без токена" }),
+      ).rejects.toMatchObject({ status: 404 });
     } finally {
       await world.close();
     }
@@ -205,6 +216,13 @@ describe("uploads and csrf origin", () => {
       assertSameOrigin({
         origin: "https://evil.test",
         host: "localhost:3000",
+      }),
+    ).toThrow(AppError);
+    expect(() =>
+      assertSameOrigin({
+        origin: "https://evil.test",
+        host: "localhost:3000",
+        forwardedHost: "evil.test",
       }),
     ).toThrow(AppError);
     expect(() =>

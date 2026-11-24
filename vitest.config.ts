@@ -1,6 +1,8 @@
 import path from "node:path";
 import { defineConfig } from "vitest/config";
 
+process.env.TUSOVKA_HASH_MEMORY ??= "4096";
+
 export default defineConfig({
   test: {
     environment: "node",

@@ -36,7 +36,7 @@ export default async function InvitePage({ params }: { params: Promise<{ token: 
       joined={joined}
       comments={comments}
       attendees={attendees}
-      inviteUrl={`/i/${event.inviteToken}`}
+      inviteToken={token}
       nowMs={services.now().getTime()}
     />
   );

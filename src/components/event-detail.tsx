@@ -17,7 +17,7 @@ export function EventDetail({
   joined,
   comments,
   attendees,
-  inviteUrl,
+  inviteToken,
   nowMs,
 }: {
   event: EventWithMeta;
@@ -30,13 +30,14 @@ export function EventDetail({
     user: { id: string; displayName: string };
   }[];
   attendees: Attendee[] | null;
-  inviteUrl?: string;
+  inviteToken?: string | null;
   nowMs: number;
 }) {
   const remaining = Math.max(0, event.capacity - event._count.rsvps);
   const past = event.startsAt.getTime() <= nowMs;
   const isAuthor = viewer?.id === event.authorId;
   const origin = appOrigin();
+  const loginNext = inviteToken ? `/i/${inviteToken}` : `/events/${event.id}`;
 
   return (
     <article className="space-y-8">
@@ -48,7 +49,7 @@ export function EventDetail({
           // eslint-disable-next-line @next/next/no-img-element
           <img
             src={`/api/covers/${event.coverFilename}`}
-            alt=""
+            alt={event.title}
             className="max-h-[420px] w-full object-cover"
           />
         ) : (
@@ -62,9 +63,13 @@ export function EventDetail({
         <div className="space-y-5">
           <p className="text-sm font-semibold uppercase tracking-wider text-ember">
             {event.isPublic ? "Публічна подія" : "Приватна подія"}
+            {past ? " · уже почалася" : ""}
           </p>
           <h1 className="display text-4xl sm:text-5xl">{event.title}</h1>
-          <p className="text-lg">{formatKyivDateTime(event.startsAt)} · Київ</p>
+          <p className="text-lg">
+            <time dateTime={event.startsAt.toISOString()}>{formatKyivDateTime(event.startsAt)}</time>
+            {" · Київ"}
+          </p>
           <p className="whitespace-pre-wrap text-[17px] leading-7">{event.description}</p>
           <p className="text-sm text-muted">Організовує {event.author.displayName}</p>
         </div>
@@ -76,26 +81,26 @@ export function EventDetail({
           {viewer ? (
             <RsvpControls
               eventId={event.id}
-              inviteToken={inviteUrl ? event.inviteToken : null}
+              inviteToken={inviteToken ?? null}
               joined={joined}
               remaining={remaining}
               past={past}
             />
           ) : (
             <Link
-              href={`/login?next=${encodeURIComponent(inviteUrl ? `/i/${event.inviteToken}` : `/events/${event.id}`)}`}
-              className="inline-flex rounded-full bg-ember px-5 py-3 font-medium text-cream"
+              href={`/login?next=${encodeURIComponent(loginNext)}`}
+              className="inline-flex rounded-full bg-ember px-5 py-3 font-medium text-cream hover:bg-ember-dark"
             >
               Увійти, щоб записатися
             </Link>
           )}
-          {isAuthor ? (
+          {isAuthor && event.inviteToken ? (
             <div className="space-y-3 border-t border-line pt-4">
               <p className="text-sm font-medium">Керування</p>
               <div className="flex flex-wrap gap-2">
                 <Link
                   href={`/events/${event.id}/edit`}
-                  className="rounded-full bg-ink px-4 py-2 text-sm font-medium text-cream"
+                  className="rounded-full bg-ink px-4 py-2 text-sm font-medium text-cream hover:bg-ember"
                 >
                   Редагувати
                 </Link>
@@ -108,8 +113,10 @@ export function EventDetail({
       </div>
 
       {isAuthor && attendees ? (
-        <section className="rounded-3xl border border-line bg-cream p-5">
-          <h2 className="display text-2xl">Учасники</h2>
+        <section className="rounded-3xl border border-line bg-cream p-5" aria-labelledby="attendees-heading">
+          <h2 id="attendees-heading" className="display text-2xl">
+            Учасники
+          </h2>
           {attendees.length === 0 ? (
             <p className="mt-2 text-muted">Поки ніхто не записався.</p>
           ) : (
@@ -127,9 +134,9 @@ export function EventDetail({
 
       <CommentThread
         eventId={event.id}
-        inviteToken={inviteUrl ? event.inviteToken : null}
+        inviteToken={inviteToken ?? null}
         comments={comments}
-        canComment={Boolean(viewer)}
+        canComment={Boolean(viewer) && !past}
       />
     </article>
   );

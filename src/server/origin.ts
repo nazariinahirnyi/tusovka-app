@@ -19,6 +19,13 @@ export function assertSafeReturnPath(path: string | null | undefined): string {
   return path;
 }
 
+export function expectedRequestHost(input: {
+  host?: string | null;
+  appOrigin?: string | null;
+}): string | null {
+  return parseHost(input.appOrigin ?? process.env.APP_ORIGIN) ?? parseHost(input.host);
+}
+
 export function assertSameOrigin(input: {
   origin?: string | null;
   referer?: string | null;
@@ -26,7 +33,12 @@ export function assertSameOrigin(input: {
   forwardedHost?: string | null;
   forwardedProto?: string | null;
 }): void {
-  const host = parseHost(input.forwardedHost ?? input.host);
+  // Never trust X-Forwarded-Host from the client: it is trivial to spoof
+  // unless the process already has an explicit APP_ORIGIN allowlist.
+  const host = expectedRequestHost({
+    host: input.host,
+    appOrigin: process.env.APP_ORIGIN,
+  });
   if (!host) {
     throw new AppError(403, "csrf", "Невірне джерело запиту");
   }

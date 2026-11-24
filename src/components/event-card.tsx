@@ -6,16 +6,18 @@ import type { EventWithMeta } from "@/server/events";
 
 export function EventCard({
   event,
-  viewerId,
+  nowMs,
 }: {
   event: EventWithMeta;
-  viewerId?: string | null;
+  nowMs: number;
 }) {
   const remaining = Math.max(0, event.capacity - event._count.rsvps);
-  const href = eventHref(event, viewerId === event.authorId);
+  const past = event.startsAt.getTime() <= nowMs;
+  const href = eventHref(event);
+
   return (
     <article className="group overflow-hidden rounded-3xl border border-line bg-cream shadow-(--shadow) transition hover:-translate-y-0.5 hover:border-ember/30">
-      <Link href={href} className="block">
+      <Link href={href} className="block focus-visible:outline-offset-0">
         <div
           className="relative aspect-16/10 overflow-hidden"
           style={
@@ -29,7 +31,7 @@ export function EventCard({
             // eslint-disable-next-line @next/next/no-img-element
             <img
               src={`/api/covers/${event.coverFilename}`}
-              alt=""
+              alt={event.title}
               className="h-full w-full object-cover transition duration-500 group-hover:scale-[1.03]"
             />
           ) : (
@@ -40,16 +42,32 @@ export function EventCard({
           <span className="absolute left-3 top-3 rounded-full bg-cream/95 px-3 py-1 text-xs font-semibold uppercase tracking-wide">
             {event.isPublic ? "Публічна" : "Приватна"}
           </span>
+          {past ? (
+            <span className="absolute right-3 top-3 rounded-full bg-ink/85 px-3 py-1 text-xs font-semibold text-cream">
+              Минула
+            </span>
+          ) : null}
         </div>
         <div className="space-y-3 p-5">
           <p className="text-sm font-medium text-ember">
-            {formatKyivDate(event.startsAt)} · {formatKyivTime(event.startsAt)}
+            <time dateTime={event.startsAt.toISOString()}>
+              {formatKyivDate(event.startsAt)} · {formatKyivTime(event.startsAt)}
+            </time>
+            <span className="text-muted"> · Київ</span>
           </p>
           <h2 className="display text-2xl leading-tight">{event.title}</h2>
           <p className="line-clamp-2 text-sm text-muted">{event.description}</p>
-          <div className="flex items-center justify-between pt-1 text-sm">
-            <span>{seatsLeftLabel(remaining)}</span>
-            <span className="text-muted">{event.author.displayName}</span>
+          <div className="flex items-center justify-between gap-3 pt-1 text-sm">
+            <span
+              className={
+                remaining <= 0
+                  ? "rounded-full bg-rose-50 px-3 py-1 font-medium text-danger"
+                  : "rounded-full bg-sand px-3 py-1 font-medium"
+              }
+            >
+              {seatsLeftLabel(remaining)}
+            </span>
+            <span className="truncate text-muted">{event.author.displayName}</span>
           </div>
         </div>
       </Link>

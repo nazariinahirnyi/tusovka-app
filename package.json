@@ -2,15 +2,18 @@
   "name": "tusovka-app",
   "version": "0.1.0",
   "private": true,
+  "engines": {
+    "node": ">=20.9.0"
+  },
   "scripts": {
-    "dev": "next dev",
-    "build": "prisma migrate deploy && next build",
-    "start": "next start",
+    "dev": "node scripts/ensure-env.cjs && prisma migrate deploy && next dev --hostname 0.0.0.0 --port 3000",
+    "build": "node scripts/ensure-env.cjs && prisma migrate deploy && next build",
+    "start": "next start --hostname 0.0.0.0 --port 3000",
     "lint": "eslint",
-    "test": "TUSOVKA_HASH_MEMORY=4096 vitest run",
-    "setup": "prisma generate && prisma migrate deploy",
+    "test": "vitest run",
+    "setup": "node scripts/ensure-env.cjs && prisma generate && prisma migrate deploy",
     "db:seed": "tsx prisma/seed.ts",
-    "postinstall": "prisma generate"
+    "postinstall": "node scripts/ensure-env.cjs && prisma generate"
   },
   "prisma": {
     "seed": "tsx prisma/seed.ts"

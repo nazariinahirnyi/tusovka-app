@@ -51,7 +51,7 @@ export async function registerAction(
   } catch (error) {
     return fail(error);
   }
-  redirect("/");
+  redirect(assertSafeReturnPath(String(formData.get("next") || "/")));
 }
 
 export async function loginAction(_prev: ActionState, formData: FormData): Promise<ActionState> {

@@ -90,6 +90,9 @@ export async function loginUser(
 export async function createSession(services: AppServices, userId: string): Promise<string> {
   const token = newSessionToken();
   const expiresAt = new Date(services.now().getTime() + SESSION_DAYS * 24 * 60 * 60 * 1000);
+  await services.prisma.session.deleteMany({
+    where: { userId, expiresAt: { lte: services.now() } },
+  });
   await services.prisma.session.create({
     data: {
       id: newId(),

@@ -6,10 +6,12 @@ import { loginAction, registerAction } from "@/app/actions/auth";
 import { Field, FormError, inputClass } from "@/components/form-error";
 import { idleState } from "@/lib/action-state";
 
-export function RegisterForm() {
+export function RegisterForm({ nextPath = "/" }: { nextPath?: string }) {
   const [state, action, pending] = useActionState(registerAction, idleState);
+  const loginHref = nextPath && nextPath !== "/" ? `/login?next=${encodeURIComponent(nextPath)}` : "/login";
   return (
     <form action={action} className="space-y-4">
+      <input type="hidden" name="next" value={nextPath} />
       <FormError error={state.error} fieldErrors={state.fieldErrors} />
       <Field label="Імʼя" name="displayName" error={state.fieldErrors?.displayName}>
         <input
@@ -58,7 +60,7 @@ export function RegisterForm() {
       </button>
       <p className="text-center text-sm text-muted">
         Уже є акаунт?{" "}
-        <Link className="font-medium text-ember underline-offset-2 hover:underline" href="/login">
+        <Link className="font-medium text-ember underline-offset-2 hover:underline" href={loginHref}>
           Увійти
         </Link>
       </p>
@@ -68,6 +70,8 @@ export function RegisterForm() {
 
 export function LoginForm({ nextPath }: { nextPath: string }) {
   const [state, action, pending] = useActionState(loginAction, idleState);
+  const registerHref =
+    nextPath && nextPath !== "/" ? `/register?next=${encodeURIComponent(nextPath)}` : "/register";
   return (
     <form action={action} className="space-y-4">
       <input type="hidden" name="next" value={nextPath} />
@@ -101,7 +105,7 @@ export function LoginForm({ nextPath }: { nextPath: string }) {
       </button>
       <p className="text-center text-sm text-muted">
         Немає акаунта?{" "}
-        <Link className="font-medium text-ember underline-offset-2 hover:underline" href="/register">
+        <Link className="font-medium text-ember underline-offset-2 hover:underline" href={registerHref}>
           Реєстрація
         </Link>
       </p>

@@ -64,11 +64,19 @@ export async function joinEvent(
     }
   } catch (error) {
     if (error instanceof AppError) throw error;
-    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") {
+    if (isUniqueViolation(error)) {
       throw new AppError(409, "already_joined", "Ви вже записані на цю подію");
     }
     throw error;
   }
+}
+
+function isUniqueViolation(error: unknown): boolean {
+  if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") {
+    return true;
+  }
+  const message = error instanceof Error ? error.message : String(error);
+  return /UNIQUE constraint failed/i.test(message);
 }
 
 export async function cancelRsvp(

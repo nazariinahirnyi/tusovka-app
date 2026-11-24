@@ -6,18 +6,19 @@
 
 ## Швидкий старт
 
-Потрібні Node.js 20.9+ і npm.
+Потрібні **Node.js 20.9+** і npm.
 
 ```bash
-cp .env.example .env
 npm install
-npx prisma migrate deploy
 npm run dev
 ```
 
 Відкрийте [http://localhost:3000](http://localhost:3000).
 
-Опційно заповніть демо-дані:
+`npm install` сам створить `.env` із `.env.example`, якщо файлу ще немає, і згенерує Prisma-клієнт.
+`npm run dev` застосує міграції SQLite і підніме сервер на порт 3000.
+
+Опційно заповніть демо-дані (в іншому терміналі, поки працює `npm run dev`):
 
 ```bash
 npm run db:seed
@@ -30,7 +31,7 @@ npm run db:seed
 
 ## Змінні середовища
 
-Див. `.env.example`.
+Див. `.env.example`. Копіювати вручну не обовʼязково: скрипти зроблять це самі.
 
 | Змінна | Призначення |
 | --- | --- |
@@ -51,12 +52,12 @@ npm test
 ## Продакшен
 
 ```bash
-cp .env.example .env
-# відредагуйте APP_ORIGIN і SESSION_COOKIE_SECURE=true
 npm install
 npm run build
 npm start
 ```
+
+Перед продакшеном у `.env` поставте свій `APP_ORIGIN` і `SESSION_COOKIE_SECURE=true`.
 
 Обкладинки лежать у `data/uploads/`. Каталог `data/` у git не зберігає БД і завантажені файли.
 
@@ -75,9 +76,9 @@ npm start
 - Параметризований Prisma/SQL, без конкатенації запитів
 - Коментарі й тексти як plain text (React екранує HTML), CSP + security headers
 - Авторизація кожної мутації на сервері
-- Приватні події: випадковий invite-token, 404 для чужих ID
+- Приватні події: випадковий invite-token (32 байти), 404 для чужих ID; токен не потрапляє в списки й HTML для не-авторів
 - Місткість у атомарному `INSERT … SELECT`, унікальність `(eventId, userId)`
 - Argon2id, нормалізація email, однакова помилка логіну, rate limit
 - Завантаження: magic bytes, ліміт 2 МБ, без SVG/HTML, випадкове імʼя
-- CSRF: SameSite=Lax + перевірка Origin, httpOnly session cookie
+- CSRF: SameSite=Lax + перевірка Origin/Referer проти Host або APP_ORIGIN (без довіри до X-Forwarded-Host)
 - Немає секретів у репозиторії

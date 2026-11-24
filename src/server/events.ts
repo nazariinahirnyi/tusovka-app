@@ -12,9 +12,10 @@ import {
   searchQuerySchema,
 } from "@/server/validation";
 
-export type EventWithMeta = Event & {
+export type EventWithMeta = Omit<Event, "inviteToken"> & {
   author: Pick<User, "id" | "displayName">;
   _count: { rsvps: number; comments: number };
+  inviteToken?: string;
 };
 
 const eventInclude = {
@@ -39,7 +40,7 @@ export async function listPublicUpcoming(
     orderBy: { startsAt: "asc" },
     take: 100,
     include: eventInclude,
-  });
+  }).then((rows) => rows.map((row) => revealInvite(row, false)));
 }
 
 export async function getEventForViewer(
@@ -62,7 +63,7 @@ export async function getEventForViewer(
   if (!access.canView) {
     throw new AppError(404, "not_found", "Подію не знайдено");
   }
-  return omitRsvps(event);
+  return revealInvite(omitRsvps(event), access.canManage);
 }
 
 export async function getEventByInvite(
@@ -84,13 +85,19 @@ export async function getEventByInvite(
   if (!access.canView) {
     throw new AppError(404, "not_found", "Подію не знайдено");
   }
-  return omitRsvps(event);
+  return revealInvite(omitRsvps(event), access.canManage);
 }
 
 function omitRsvps<T extends { rsvps?: unknown }>(event: T): Omit<T, "rsvps"> {
   const copy = { ...event };
   delete copy.rsvps;
   return copy;
+}
+
+function revealInvite<T extends { inviteToken: string }>(event: T, keep: boolean): Omit<T, "inviteToken"> & { inviteToken?: string } {
+  if (keep) return event;
+  const { inviteToken: _hidden, ...rest } = event;
+  return rest;
 }
 
 export async function createEvent(
@@ -163,27 +170,35 @@ export async function updateEvent(
   }
 
   let coverFilename = existing.coverFilename;
+  let uploaded: string | null = null;
   const hasNewCover =
     cover && ((Buffer.isBuffer(cover) && cover.length > 0) || (!Buffer.isBuffer(cover) && cover.size > 0));
   if (hasNewCover && cover) {
-    coverFilename = await saveCover(services.uploadsDir, cover);
-    if (existing.coverFilename) {
-      await deleteCover(services.uploadsDir, existing.coverFilename);
-    }
+    uploaded = await saveCover(services.uploadsDir, cover);
+    coverFilename = uploaded;
   }
 
-  return services.prisma.event.update({
-    where: { id: eventId },
-    data: {
-      title: data.title,
-      titleNormalized: normalizeTitle(data.title),
-      description: data.description,
-      startsAt,
-      capacity: data.capacity,
-      coverFilename,
-      isPublic: data.isPublic,
-    },
-  });
+  try {
+    const updated = await services.prisma.event.update({
+      where: { id: eventId },
+      data: {
+        title: data.title,
+        titleNormalized: normalizeTitle(data.title),
+        description: data.description,
+        startsAt,
+        capacity: data.capacity,
+        coverFilename,
+        isPublic: data.isPublic,
+      },
+    });
+    if (uploaded && existing.coverFilename && existing.coverFilename !== uploaded) {
+      await deleteCover(services.uploadsDir, existing.coverFilename);
+    }
+    return updated;
+  } catch (error) {
+    if (uploaded) await deleteCover(services.uploadsDir, uploaded);
+    throw error;
+  }
 }
 
 export async function deleteEvent(
@@ -201,11 +216,12 @@ export async function deleteEvent(
 }
 
 export async function listCreatedEvents(services: AppServices, userId: string): Promise<EventWithMeta[]> {
-  return services.prisma.event.findMany({
+  const rows = await services.prisma.event.findMany({
     where: { authorId: userId },
     orderBy: { startsAt: "desc" },
     include: eventInclude,
   });
+  return rows.map((row) => revealInvite(row, true));
 }
 
 export async function listJoinedEvents(services: AppServices, userId: string): Promise<EventWithMeta[]> {
@@ -214,7 +230,7 @@ export async function listJoinedEvents(services: AppServices, userId: string): P
     orderBy: { createdAt: "desc" },
     include: { event: { include: eventInclude } },
   });
-  return rows.map((row) => row.event);
+  return rows.map((row) => revealInvite(row.event, row.event.authorId === userId));
 }
 
 export async function listAttendees(

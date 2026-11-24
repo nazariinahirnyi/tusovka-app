@@ -35,7 +35,7 @@ export function RsvpControls({
   }
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-3" aria-live="polite">
       {joined ? (
         <button
           type="button"

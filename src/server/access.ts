@@ -23,7 +23,6 @@ export function inspectEventAccess(
   };
 }
 
-export function eventHref(event: Pick<Event, "id" | "isPublic" | "inviteToken">, isAuthor: boolean): string {
-  if (event.isPublic || isAuthor) return `/events/${event.id}`;
-  return `/i/${event.inviteToken}`;
+export function eventHref(event: Pick<Event, "id">): string {
+  return `/events/${event.id}`;
 }

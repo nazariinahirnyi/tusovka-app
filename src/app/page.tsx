@@ -15,6 +15,7 @@ export default async function HomePage({ searchParams }: PageProps<"/">) {
   const services = await getServices();
   const user = await currentUser();
   const events = await listPublicUpcoming(services, q);
+  const nowMs = services.now().getTime();
 
   return (
     <div className="space-y-10">
@@ -76,7 +77,7 @@ export default async function HomePage({ searchParams }: PageProps<"/">) {
         ) : (
           <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
             {events.map((event) => (
-              <EventCard key={event.id} event={event} viewerId={user?.id} />
+              <EventCard key={event.id} event={event} nowMs={nowMs} />
             ))}
           </div>
         )}

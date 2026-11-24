@@ -14,6 +14,11 @@ export async function GET(
   }
   try {
     const services = await getServices();
+    const attached = await services.prisma.event.findFirst({
+      where: { coverFilename: filename },
+      select: { id: true },
+    });
+    if (!attached) return new Response("Not found", { status: 404 });
     const filePath = resolveCoverPath(services.uploadsDir, filename);
     const info = await stat(filePath);
     if (!info.isFile()) return new Response("Not found", { status: 404 });

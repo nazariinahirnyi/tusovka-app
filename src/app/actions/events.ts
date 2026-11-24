@@ -40,7 +40,7 @@ export async function createEventAction(
     const user = await requireCurrentUser();
     const services = await getServices();
     const event = await createEvent(services, user.id, eventFields(formData), coverFromForm(formData));
-    redirect(eventHref(event, true));
+    redirect(eventHref(event));
   } catch (error) {
     if (isRedirect(error)) throw error;
     return fail(error);
@@ -57,7 +57,7 @@ export async function updateEventAction(
     const user = await requireCurrentUser();
     const services = await getServices();
     const event = await updateEvent(services, eventId, user.id, eventFields(formData), coverFromForm(formData));
-    redirect(eventHref(event, true));
+    redirect(eventHref(event));
   } catch (error) {
     if (isRedirect(error)) throw error;
     return fail(error);
