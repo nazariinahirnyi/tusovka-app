@@ -96,4 +96,19 @@ export function formatKyivDateTime(date: Date): string {
   return `${formatKyivDate(date)}, ${formatKyivTime(date)}`;
 }
 
+function kyivDayNumber(date: Date): number {
+  const parts = tzParts(date.getTime(), KYIV);
+  return Date.UTC(parts.year, parts.month - 1, parts.day) / 86_400_000;
+}
+
+export function formatKyivRelative(date: Date, now: Date): string {
+  const diff = kyivDayNumber(date) - kyivDayNumber(now);
+  if (diff === 0) return "сьогодні";
+  if (diff === 1) return "завтра";
+  if (diff === -1) return "учора";
+  if (diff > 1 && diff < 7) return `через ${diff} дн.`;
+  if (diff < -1 && diff > -7) return `${Math.abs(diff)} дн. тому`;
+  return formatKyivDate(date);
+}
+
 export const KYIV_TIME_ZONE = KYIV;

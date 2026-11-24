@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useEffect, useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
 import { cancelRsvpAction, joinEventAction } from "@/app/actions/rsvp";
 
 export function RsvpControls({
@@ -16,11 +17,21 @@ export function RsvpControls({
   remaining: number;
   past: boolean;
 }) {
+  const router = useRouter();
   const [error, setError] = useState<string | null>(null);
   const [pending, start] = useTransition();
+  const [localJoined, setLocalJoined] = useState(joined);
+
+  useEffect(() => {
+    setLocalJoined(joined);
+  }, [joined]);
 
   if (past) {
-    return <p className="rounded-2xl bg-line/50 px-4 py-3 text-sm">Ця подія вже почалася або минула.</p>;
+    return (
+      <p className="rounded-2xl bg-line/50 px-4 py-3 text-sm">
+        Ця подія вже почалася або минула. Записатися чи скасувати місце вже не можна.
+      </p>
+    );
   }
 
   function run(kind: "join" | "cancel") {
@@ -30,29 +41,39 @@ export function RsvpControls({
         kind === "join"
           ? await joinEventAction(eventId, inviteToken)
           : await cancelRsvpAction(eventId, inviteToken);
-      if (!result.ok) setError(result.error ?? "Не вдалося оновити запис");
+      if (!result.ok) {
+        setError(result.error ?? "Не вдалося оновити запис");
+        return;
+      }
+      setLocalJoined(kind === "join");
+      router.refresh();
     });
   }
 
   return (
     <div className="space-y-3" aria-live="polite">
-      {joined ? (
-        <button
-          type="button"
-          disabled={pending}
-          onClick={() => run("cancel")}
-          className="rounded-full border border-ink px-6 py-3 font-medium hover:bg-ink hover:text-cream disabled:opacity-60"
-        >
-          {pending ? "Скасовуємо…" : "Скасувати"}
-        </button>
+      {localJoined ? (
+        <>
+          <p className="rounded-2xl bg-emerald-50 px-4 py-3 text-sm text-ok">Ви записані. До зустрічі!</p>
+          <button
+            type="button"
+            disabled={pending}
+            onClick={() => run("cancel")}
+            className="inline-flex min-h-11 w-full items-center justify-center rounded-full border border-ink px-6 py-3 font-medium hover:bg-ink hover:text-cream disabled:opacity-60"
+          >
+            {pending ? "Скасовуємо…" : "Скасувати місце"}
+          </button>
+        </>
       ) : remaining <= 0 ? (
-        <p className="rounded-2xl bg-rose-50 px-4 py-3 text-sm text-danger">Вільних місць немає.</p>
+        <p className="rounded-2xl bg-rose-50 px-4 py-3 text-sm text-danger">
+          Вільних місць немає. Якщо хтось скасує — лічильник оновиться.
+        </p>
       ) : (
         <button
           type="button"
           disabled={pending}
           onClick={() => run("join")}
-          className="rounded-full bg-ember px-6 py-3 font-medium text-cream hover:bg-ember-dark disabled:opacity-60"
+          className="inline-flex min-h-11 w-full items-center justify-center rounded-full bg-ember px-6 py-3 font-medium text-cream hover:bg-ember-dark disabled:opacity-60"
         >
           {pending ? "Записуємо…" : "Іду"}
         </button>

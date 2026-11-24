@@ -5,6 +5,8 @@ import { createEventAction, updateEventAction } from "@/app/actions/events";
 import { Field, FormError, inputClass } from "@/components/form-error";
 import { idleState, type ActionState } from "@/lib/action-state";
 
+const MAX_COVER_BYTES = 2 * 1024 * 1024;
+
 type EventFormValues = {
   title: string;
   description: string;
@@ -17,9 +19,11 @@ type EventFormValues = {
 export function EventForm({
   eventId,
   defaults,
+  minStartsAt,
 }: {
   eventId?: string;
   defaults?: EventFormValues;
+  minStartsAt?: string;
 }) {
   const action = eventId
     ? updateEventAction.bind(null, eventId)
@@ -31,11 +35,14 @@ export function EventForm({
   const [preview, setPreview] = useState<string | null>(
     defaults?.coverFilename ? `/api/covers/${defaults.coverFilename}` : null,
   );
+  const [coverHint, setCoverHint] = useState<string | null>(null);
+  const [titleLen, setTitleLen] = useState(defaults?.title.length ?? 0);
+  const [descLen, setDescLen] = useState(defaults?.description.length ?? 0);
 
   return (
     <form action={formAction} className="space-y-5">
       <FormError error={state.error} fieldErrors={state.fieldErrors} />
-      <Field label="Назва" name="title" error={state.fieldErrors?.title}>
+      <Field label="Назва" name="title" error={state.fieldErrors?.title} hint={`${titleLen}/120`}>
         <input
           id="title"
           name="title"
@@ -44,9 +51,15 @@ export function EventForm({
           maxLength={120}
           defaultValue={defaults?.title}
           className={inputClass}
+          onChange={(event) => setTitleLen(event.target.value.length)}
         />
       </Field>
-      <Field label="Опис" name="description" error={state.fieldErrors?.description}>
+      <Field
+        label="Опис"
+        name="description"
+        error={state.fieldErrors?.description}
+        hint={`${descLen}/5000`}
+      >
         <textarea
           id="description"
           name="description"
@@ -55,12 +68,14 @@ export function EventForm({
           rows={6}
           defaultValue={defaults?.description}
           className={`${inputClass} min-h-36 resize-y`}
+          onChange={(event) => setDescLen(event.target.value.length)}
         />
       </Field>
       <div className="grid gap-4 sm:grid-cols-2">
         <Field
           label="Дата й час (Київ)"
           name="startsAt"
+          hint="Оберіть майбутній час. Зберігаємо в UTC, показуємо за Києвом."
           error={state.fieldErrors?.startsAt}
         >
           <input
@@ -68,11 +83,17 @@ export function EventForm({
             name="startsAt"
             type="datetime-local"
             required
+            min={minStartsAt}
             defaultValue={defaults?.startsAt}
             className={inputClass}
           />
         </Field>
-        <Field label="Кількість місць" name="capacity" error={state.fieldErrors?.capacity}>
+        <Field
+          label="Кількість місць"
+          name="capacity"
+          hint="Не можна зменшити нижче вже записаних."
+          error={state.fieldErrors?.capacity}
+        >
           <input
             id="capacity"
             name="capacity"
@@ -121,8 +142,8 @@ export function EventForm({
       <Field
         label="Обкладинка"
         name="cover"
-        hint="JPEG, PNG, GIF або WebP до 2 МБ. Можна без фото."
-        error={state.fieldErrors?.cover}
+        hint="JPEG, PNG, GIF або WebP до 2 МБ. Можна без фото. Якщо форма не пройшла перевірку — оберіть файл ще раз."
+        error={state.fieldErrors?.cover ?? coverHint ?? undefined}
       >
         <input
           id="cover"
@@ -132,7 +153,14 @@ export function EventForm({
           className={inputClass}
           onChange={(event) => {
             const file = event.target.files?.[0];
+            setCoverHint(null);
             if (!file) return;
+            if (file.size > MAX_COVER_BYTES) {
+              setCoverHint("Обкладинка має бути не більше 2 МБ");
+              event.target.value = "";
+              setPreview(defaults?.coverFilename ? `/api/covers/${defaults.coverFilename}` : null);
+              return;
+            }
             const url = URL.createObjectURL(file);
             setPreview(url);
           }}
@@ -146,7 +174,7 @@ export function EventForm({
       <button
         type="submit"
         disabled={pending}
-        className="rounded-full bg-ink px-6 py-3 font-medium text-cream hover:bg-ember disabled:opacity-60"
+        className="inline-flex min-h-11 items-center rounded-full bg-ink px-6 py-3 font-medium text-cream hover:bg-ember disabled:opacity-60"
       >
         {pending ? "Зберігаємо…" : eventId ? "Зберегти зміни" : "Опублікувати подію"}
       </button>

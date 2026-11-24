@@ -5,10 +5,10 @@ import type { PublicUser } from "@/server/auth";
 
 export function Header({ user }: { user: PublicUser | null }) {
   return (
-    <header className="sticky top-0 z-20 border-b border-line/80 bg-sand/85 backdrop-blur-md">
+    <header className="sticky top-0 z-20 border-b border-line/80 bg-sand/90 backdrop-blur-md">
       <a
         href="#content"
-        className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-3 focus:rounded-lg focus:bg-cream focus:px-3 focus:py-2"
+        className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-3 focus:z-30 focus:rounded-lg focus:bg-cream focus:px-3 focus:py-2"
       >
         Перейти до змісту
       </a>
@@ -17,27 +17,28 @@ export function Header({ user }: { user: PublicUser | null }) {
           <Logo />
         </Link>
         <nav className="flex flex-wrap items-center justify-end gap-1 text-sm font-medium">
-          <Link className="rounded-full px-3 py-2 text-ink/80 hover:bg-cream hover:text-ink" href="/">
+          <Link className="inline-flex min-h-11 items-center rounded-full px-3 py-2 text-ink/80 hover:bg-cream hover:text-ink" href="/">
             Події
           </Link>
           {user ? (
             <>
               <Link
-                className="rounded-full px-3 py-2 text-ink/80 hover:bg-cream hover:text-ink"
+                className="inline-flex min-h-11 items-center rounded-full px-3 py-2 text-ink/80 hover:bg-cream hover:text-ink"
                 href="/events/new"
               >
                 Створити
               </Link>
               <Link
-                className="rounded-full px-3 py-2 text-ink/80 hover:bg-cream hover:text-ink"
+                className="inline-flex min-h-11 max-w-32 items-center truncate rounded-full px-3 py-2 text-ink/80 hover:bg-cream hover:text-ink sm:max-w-none"
                 href="/profile"
+                title={user.displayName}
               >
-                Профіль
+                {user.displayName}
               </Link>
               <form action={logoutAction}>
                 <button
                   type="submit"
-                  className="rounded-full px-3 py-2 text-ink/80 hover:bg-cream hover:text-ink"
+                  className="inline-flex min-h-11 items-center rounded-full px-3 py-2 text-ink/80 hover:bg-cream hover:text-ink"
                 >
                   Вийти
                 </button>
@@ -45,11 +46,11 @@ export function Header({ user }: { user: PublicUser | null }) {
             </>
           ) : (
             <>
-              <Link className="rounded-full px-3 py-2 text-ink/80 hover:bg-cream" href="/login">
+              <Link className="inline-flex min-h-11 items-center rounded-full px-3 py-2 text-ink/80 hover:bg-cream" href="/login">
                 Увійти
               </Link>
               <Link
-                className="rounded-full bg-ink px-4 py-2 text-cream hover:bg-ember"
+                className="inline-flex min-h-11 items-center rounded-full bg-ink px-4 py-2 text-cream hover:bg-ember"
                 href="/register"
               >
                 Реєстрація

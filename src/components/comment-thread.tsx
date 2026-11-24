@@ -1,6 +1,7 @@
 "use client";
 
-import { useActionState, useEffect, useRef } from "react";
+import { useActionState, useEffect, useRef, useState } from "react";
+import Link from "next/link";
 import { addCommentAction } from "@/app/actions/comments";
 import { FormError, inputClass } from "@/components/form-error";
 import { formatKyivDateTime } from "@/lib/datetime";
@@ -22,24 +23,33 @@ export function CommentThread({
   inviteToken,
   comments,
   canComment,
+  loginHref,
+  lockedReason,
 }: {
   eventId: string;
   inviteToken?: string | null;
   comments: CommentView[];
   canComment: boolean;
+  loginHref?: string;
+  lockedReason?: string;
 }) {
   const bound = addCommentAction.bind(null, eventId, inviteToken ?? null);
   const [state, action, pending] = useActionState(bound, idleState);
   const formRef = useRef<HTMLFormElement>(null);
+  const [length, setLength] = useState(0);
 
   useEffect(() => {
-    if (state.ok) formRef.current?.reset();
+    if (state.ok) {
+      formRef.current?.reset();
+      setLength(0);
+    }
   }, [state.ok]);
 
   return (
     <section className="space-y-5" aria-labelledby="comments-heading">
       <h2 id="comments-heading" className="display text-2xl">
         Коментарі
+        <span className="ml-2 font-sans text-base font-normal text-muted">({comments.length})</span>
       </h2>
       {comments.length === 0 ? (
         <p className="text-muted">Поки тихо. Напишіть перший коментар.</p>
@@ -72,17 +82,34 @@ export function CommentThread({
             rows={3}
             placeholder="Що варто знати тим, хто йде?"
             className={`${inputClass} resize-y`}
+            onChange={(event) => setLength(event.target.value.length)}
           />
-          <button
-            type="submit"
-            disabled={pending}
-            className="rounded-full bg-ink px-5 py-2.5 text-sm font-medium text-cream hover:bg-ember disabled:opacity-60"
-          >
-            {pending ? "Надсилаємо…" : "Надіслати"}
-          </button>
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <p className="text-xs text-muted">{length}/1000</p>
+            <button
+              type="submit"
+              disabled={pending}
+              className="inline-flex min-h-11 items-center rounded-full bg-ink px-5 py-2.5 text-sm font-medium text-cream hover:bg-ember disabled:opacity-60"
+            >
+              {pending ? "Надсилаємо…" : "Надіслати"}
+            </button>
+          </div>
         </form>
+      ) : lockedReason ? (
+        <p className="rounded-2xl bg-line/40 px-4 py-3 text-sm text-muted">{lockedReason}</p>
       ) : (
-        <p className="text-sm text-muted">Увійдіть, щоб залишити коментар.</p>
+        <p className="text-sm text-muted">
+          {loginHref ? (
+            <>
+              <Link className="font-medium text-ember hover:underline" href={loginHref}>
+                Увійдіть
+              </Link>
+              , щоб залишити коментар.
+            </>
+          ) : (
+            "Увійдіть, щоб залишити коментар."
+          )}
+        </p>
       )}
     </section>
   );

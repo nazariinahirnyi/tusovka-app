@@ -17,7 +17,11 @@ export default async function LoginPage({
   return (
     <div className="mx-auto max-w-md rounded-3xl border border-line bg-cream p-8 shadow-(--shadow)">
       <h1 className="display text-3xl">Увійти</h1>
-      <p className="mt-2 mb-6 text-muted">Раді знову бачити. Час на тусовку.</p>
+      <p className="mt-2 mb-6 text-muted">
+        {nextPath !== "/"
+          ? "Після входу повернемо вас туди, звідки прийшли."
+          : "Раді знову бачити. Час на тусовку."}
+      </p>
       <LoginForm nextPath={nextPath} />
     </div>
   );

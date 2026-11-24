@@ -3,8 +3,9 @@ import { CommentThread } from "@/components/comment-thread";
 import { CopyInvite } from "@/components/copy-invite";
 import { DeleteEventButton } from "@/components/delete-event-button";
 import { RsvpControls } from "@/components/rsvp-controls";
+import { SeatMeter } from "@/components/seat-meter";
 import { formatKyivDateTime } from "@/lib/datetime";
-import { coverGradient, peopleWord, seatsLeftLabel } from "@/lib/uk";
+import { coverGradient, peopleWord } from "@/lib/uk";
 import { appOrigin } from "@/server/origin";
 import type { PublicUser } from "@/server/auth";
 import type { EventWithMeta } from "@/server/events";
@@ -38,9 +39,16 @@ export function EventDetail({
   const isAuthor = viewer?.id === event.authorId;
   const origin = appOrigin();
   const loginNext = inviteToken ? `/i/${inviteToken}` : `/events/${event.id}`;
+  const loginHref = `/login?next=${encodeURIComponent(loginNext)}`;
+  const registerHref = `/register?next=${encodeURIComponent(loginNext)}`;
 
   return (
     <article className="space-y-8">
+      <p>
+        <Link href="/" className="text-sm font-medium text-ember hover:underline">
+          ← Усі події
+        </Link>
+      </p>
       <div
         className="overflow-hidden rounded-3xl border border-line"
         style={event.coverFilename ? undefined : { background: coverGradient(event.id) }}
@@ -49,13 +57,11 @@ export function EventDetail({
           // eslint-disable-next-line @next/next/no-img-element
           <img
             src={`/api/covers/${event.coverFilename}`}
-            alt={event.title}
+            alt=""
             className="max-h-[420px] w-full object-cover"
           />
         ) : (
-          <div className="grid min-h-56 place-items-center px-6 py-16 text-cream">
-            <h1 className="display text-center text-4xl">{event.title}</h1>
-          </div>
+          <div className="min-h-40 sm:min-h-52" aria-hidden />
         )}
       </div>
 
@@ -73,26 +79,46 @@ export function EventDetail({
           <p className="whitespace-pre-wrap text-[17px] leading-7">{event.description}</p>
           <p className="text-sm text-muted">Організовує {event.author.displayName}</p>
         </div>
-        <aside className="h-fit space-y-4 rounded-3xl border border-line bg-cream p-5">
-          <p className="display text-3xl">{seatsLeftLabel(remaining)}</p>
+        <aside className="h-fit space-y-4 rounded-3xl border border-line bg-cream p-5 lg:sticky lg:top-24">
+          <p className="display text-3xl leading-none">
+            {remaining > 0 ? remaining : 0}
+            <span className="ml-2 text-lg font-sans font-medium text-muted">вільних</span>
+          </p>
+          <SeatMeter taken={event._count.rsvps} capacity={event.capacity} />
           <p className="text-sm text-muted">
             {event._count.rsvps} {peopleWord(event._count.rsvps)} з {event.capacity}
           </p>
           {viewer ? (
-            <RsvpControls
-              eventId={event.id}
-              inviteToken={inviteToken ?? null}
-              joined={joined}
-              remaining={remaining}
-              past={past}
-            />
+            <>
+              <RsvpControls
+                eventId={event.id}
+                inviteToken={inviteToken ?? null}
+                joined={joined}
+                remaining={remaining}
+                past={past}
+              />
+              {isAuthor && !joined && !past ? (
+                <p className="text-sm text-muted">
+                  Ви організатор. Місце за вами не бронюється саме: натисніть «Іду», якщо плануєте бути.
+                </p>
+              ) : null}
+            </>
           ) : (
-            <Link
-              href={`/login?next=${encodeURIComponent(loginNext)}`}
-              className="inline-flex rounded-full bg-ember px-5 py-3 font-medium text-cream hover:bg-ember-dark"
-            >
-              Увійти, щоб записатися
-            </Link>
+            <div className="space-y-3">
+              <Link
+                href={loginHref}
+                className="inline-flex min-h-11 w-full items-center justify-center rounded-full bg-ember px-5 py-3 font-medium text-cream hover:bg-ember-dark"
+              >
+                Увійти, щоб записатися
+              </Link>
+              <p className="text-sm text-muted">
+                Немає акаунта?{" "}
+                <Link className="font-medium text-ember hover:underline" href={registerHref}>
+                  Зареєструйтеся
+                </Link>
+                {" — після цього повернемо сюди."}
+              </p>
+            </div>
           )}
           {isAuthor && event.inviteToken ? (
             <div className="space-y-3 border-t border-line pt-4">
@@ -100,12 +126,17 @@ export function EventDetail({
               <div className="flex flex-wrap gap-2">
                 <Link
                   href={`/events/${event.id}/edit`}
-                  className="rounded-full bg-ink px-4 py-2 text-sm font-medium text-cream hover:bg-ember"
+                  className="inline-flex min-h-11 items-center rounded-full bg-ink px-4 py-2 text-sm font-medium text-cream hover:bg-ember"
                 >
                   Редагувати
                 </Link>
                 <DeleteEventButton eventId={event.id} title={event.title} />
               </div>
+              <p className="text-xs text-muted">
+                {event.isPublic
+                  ? "Подія на головній. Посилання теж можна надіслати друзям."
+                  : "Приватна: хто без цього посилання подію не побачить."}
+              </p>
               <CopyInvite url={`${origin}/i/${event.inviteToken}`} />
             </div>
           ) : null}
@@ -118,7 +149,7 @@ export function EventDetail({
             Учасники
           </h2>
           {attendees.length === 0 ? (
-            <p className="mt-2 text-muted">Поки ніхто не записався.</p>
+            <p className="mt-2 text-muted">Поки ніхто не записався. Поділіться запрошенням вище.</p>
           ) : (
             <ul className="mt-4 divide-y divide-line">
               {attendees.map((person) => (
@@ -137,6 +168,8 @@ export function EventDetail({
         inviteToken={inviteToken ?? null}
         comments={comments}
         canComment={Boolean(viewer) && !past}
+        loginHref={viewer ? undefined : loginHref}
+        lockedReason={past ? "Коментарі закриті: подія вже почалася." : undefined}
       />
     </article>
   );

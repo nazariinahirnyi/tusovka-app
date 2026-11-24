@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useEffect, useState, useTransition } from "react";
 import { deleteEventAction } from "@/app/actions/events";
 
 export function DeleteEventButton({ eventId, title }: { eventId: string; title: string }) {
@@ -8,12 +8,21 @@ export function DeleteEventButton({ eventId, title }: { eventId: string; title: 
   const [error, setError] = useState<string | null>(null);
   const [pending, start] = useTransition();
 
+  useEffect(() => {
+    if (!open) return;
+    function onKey(event: KeyboardEvent) {
+      if (event.key === "Escape" && !pending) setOpen(false);
+    }
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [open, pending]);
+
   return (
     <>
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="rounded-full border border-danger px-4 py-2 text-sm font-medium text-danger hover:bg-rose-50"
+        className="inline-flex min-h-11 items-center rounded-full border border-danger px-4 py-2 text-sm font-medium text-danger hover:bg-rose-50"
       >
         Видалити
       </button>
@@ -23,8 +32,14 @@ export function DeleteEventButton({ eventId, title }: { eventId: string; title: 
           role="dialog"
           aria-modal="true"
           aria-labelledby="delete-title"
+          onClick={() => {
+            if (!pending) setOpen(false);
+          }}
         >
-          <div className="w-full max-w-md rounded-3xl bg-cream p-6 shadow-xl">
+          <div
+            className="w-full max-w-md rounded-3xl bg-cream p-6 shadow-xl"
+            onClick={(event) => event.stopPropagation()}
+          >
             <h2 id="delete-title" className="display text-2xl">
               Видалити подію?
             </h2>
@@ -35,7 +50,7 @@ export function DeleteEventButton({ eventId, title }: { eventId: string; title: 
             <div className="mt-6 flex justify-end gap-2">
               <button
                 type="button"
-                className="rounded-full px-4 py-2 text-sm"
+                className="inline-flex min-h-11 items-center rounded-full px-4 py-2 text-sm"
                 onClick={() => setOpen(false)}
                 disabled={pending}
               >
@@ -44,7 +59,7 @@ export function DeleteEventButton({ eventId, title }: { eventId: string; title: 
               <button
                 type="button"
                 disabled={pending}
-                className="rounded-full bg-danger px-4 py-2 text-sm font-medium text-white disabled:opacity-60"
+                className="inline-flex min-h-11 items-center rounded-full bg-danger px-4 py-2 text-sm font-medium text-white disabled:opacity-60"
                 onClick={() => {
                   setError(null);
                   start(async () => {

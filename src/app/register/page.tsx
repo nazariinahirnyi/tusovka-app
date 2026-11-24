@@ -17,7 +17,11 @@ export default async function RegisterPage({
   return (
     <div className="mx-auto max-w-md rounded-3xl border border-line bg-cream p-8 shadow-(--shadow)">
       <h1 className="display text-3xl">Реєстрація</h1>
-      <p className="mt-2 mb-6 text-muted">Створіть акаунт, щоб збирати людей і ходити на події.</p>
+      <p className="mt-2 mb-6 text-muted">
+        {nextPath !== "/"
+          ? "Створіть акаунт — і одразу повернемо до події."
+          : "Створіть акаунт, щоб збирати людей і ходити на події."}
+      </p>
       <RegisterForm nextPath={nextPath} />
     </div>
   );

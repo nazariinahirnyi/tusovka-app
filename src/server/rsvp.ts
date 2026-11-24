@@ -101,6 +101,14 @@ export async function cancelRsvp(
   }
 }
 
+export async function listJoinedEventIds(services: AppServices, userId: string): Promise<string[]> {
+  const rows = await services.prisma.rsvp.findMany({
+    where: { userId },
+    select: { eventId: true },
+  });
+  return rows.map((row) => row.eventId);
+}
+
 export async function hasJoined(services: AppServices, eventId: string, userId: string): Promise<boolean> {
   const row = await services.prisma.rsvp.findUnique({
     where: { eventId_userId: { eventId, userId } },

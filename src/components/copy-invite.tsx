@@ -27,6 +27,7 @@ export function CopyInvite({ url }: { url: string }) {
         value={url}
         aria-label="Посилання-запрошення"
         className="w-full rounded-2xl border border-line bg-cream px-4 py-2.5 text-sm"
+        onFocus={(event) => event.currentTarget.select()}
       />
       <button
         type="button"

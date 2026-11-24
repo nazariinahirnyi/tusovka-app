@@ -31,7 +31,7 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
     <html lang="uk" className={`${manrope.variable} ${unbounded.variable} h-full`}>
       <body className="grain flex min-h-full flex-col antialiased">
         <Header user={user} />
-        <div id="content" className="mx-auto w-full max-w-6xl flex-1 px-4 py-8">
+        <div id="content" className="mx-auto w-full max-w-6xl flex-1 px-4 py-8 sm:py-10">
           {children}
         </div>
         <Footer />
